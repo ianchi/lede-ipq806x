@@ -14,7 +14,7 @@
 
 /dts-v1/;
 
-#include "mt7623.dtsi"
+#include "_mt7623.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -474,6 +474,7 @@
 &gmac2 {
 	mac-address = [00 11 22 33 44 55];
 	status = "okay";
+	phy-handle = <&phy5>;
 };
 
 &gsw {
