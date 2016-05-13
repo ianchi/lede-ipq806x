@@ -26,6 +26,9 @@ ipq806x_board_detect() {
 	*"R7500")
 		name="r7500"
 		;;
+	*"Linksys EA8500"*)
+		name="ea8500"
+		;;
 	esac
 
 	[ -z "$name" ] && name="unknown"
