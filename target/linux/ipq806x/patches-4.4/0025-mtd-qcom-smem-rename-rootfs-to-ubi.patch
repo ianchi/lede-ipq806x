@@ -1,0 +1,28 @@
+From 2ad70ec32c7bb91b9a4a0ea05448dace4dec7afe Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Fri, 13 May 2016 13:27:36 +0200
+Subject: [PATCH 25/29] mtd: qcom: smem: rename rootfs to ubi
+
+Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
+---
+ drivers/mtd/qcom_smem_part.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/mtd/qcom_smem_part.c b/drivers/mtd/qcom_smem_part.c
+index 0c7bf36..ebae0ea 100644
+--- a/drivers/mtd/qcom_smem_part.c
++++ b/drivers/mtd/qcom_smem_part.c
+@@ -189,6 +189,10 @@ static int parse_qcom_smem_partitions(struct mtd_info *master,
+ 		m_part->size = le32_to_cpu(s_part->size) * (*smem_blksz);
+ 		m_part->offset = le32_to_cpu(s_part->start) * (*smem_blksz);
+ 
++		/* "rootfs" conflicts with OpenWrt auto mounting */
++		if (mtd_type_is_nand(master) && !strcmp(m_part->name, "rootfs"))
++			m_part->name = "ubi";
++
+ 		/*
+ 		 * The last SMEM partition may have its size marked as
+ 		 * something like 0xffffffff, which means "until the end of the
+-- 
+1.7.10.4
+

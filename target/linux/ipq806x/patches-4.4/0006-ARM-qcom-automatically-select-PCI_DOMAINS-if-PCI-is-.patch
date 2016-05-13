@@ -1,0 +1,34 @@
+From cb87a3cc845c295db430628f9df21263b8b2a27b Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Fri, 13 May 2016 10:38:29 +0200
+Subject: [PATCH 06/29] ARM: qcom: automatically select PCI_DOMAINS if PCI is
+ enabled
+
+If multiple PCIe devices are present in the system, the kernel will
+panic at boot time when trying to scan the PCI buses. This happens on
+IPQ806x based platforms, which has 3 PCIe ports.
+
+Enabling this option allows the kernel to assign the pci-domains
+according to the device-tree content. This allows multiple PCIe
+controllers to coexist in the system.
+
+Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
+---
+ arch/arm/mach-qcom/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-qcom/Kconfig b/arch/arm/mach-qcom/Kconfig
+index 2256cd1..963b097 100644
+--- a/arch/arm/mach-qcom/Kconfig
++++ b/arch/arm/mach-qcom/Kconfig
+@@ -5,6 +5,7 @@ menuconfig ARCH_QCOM
+ 	select ARM_AMBA
+ 	select PINCTRL
+ 	select QCOM_SCM if SMP
++	select PCI_DOMAINS if PCI
+ 	help
+ 	  Support for Qualcomm's devicetree based systems.
+ 
+-- 
+1.7.10.4
+

@@ -1,0 +1,26 @@
+From 753b095c845a7e6ffb03ef2e539e995d747d6601 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Fri, 13 May 2016 17:13:03 +0200
+Subject: [PATCH 29/29] arm: boot: add ipq dts files
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ arch/arm/boot/dts/Makefile |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 30bbc37..34aa89e 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -506,6 +506,8 @@ dtb-$(CONFIG_ARCH_QCOM) += \
+ 	qcom-apq8084-ifc6540.dtb \
+ 	qcom-apq8084-mtp.dtb \
+ 	qcom-ipq8064-ap148.dtb \
++	qcom-ipq8064-db149.dtb \
++	qcom-ipq8064-r7500.dtb \
+ 	qcom-msm8660-surf.dtb \
+ 	qcom-msm8960-cdp.dtb \
+ 	qcom-msm8974-sony-xperia-honami.dtb
+-- 
+1.7.10.4
+
