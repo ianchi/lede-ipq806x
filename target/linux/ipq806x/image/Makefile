@@ -36,6 +36,11 @@ define Build/append-dtb
 	cat $(DTS_DIR)/$(DEVICE_DTS).dtb >> $@
 endef
 
+define Build/append-new-dtb
+       $(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb)
+       cat $@.dtb >> $@
+endef
+
 define Build/append-file
 	cat $(1) >> $@
 endef
@@ -133,6 +138,23 @@ define Device/R7500
 	BOARD_NAME := r7500
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy D7800 DB149 R7500
+define Device/EA8500
+	$(call Device/LegacyImage)
+	DEVICE_DTS := qcom-ipq8064-ea8500
+	PAGESIZE := 2048
+	BLOCKSIZE := 128KiB
+	KERNEL_SIZE := 3145728
+	FILESYSTEMS := squashfs
+	KERNEL = kernel-bin | append-new-dtb | uImage none | append-file $(KDIR)/root.dummy
+	PROFILES := Generic EA8500
+	BOARD_NAME := ea8500
+	IMAGES := factory_168206.bin factory_169978.bin sysupgrade.tar
+	IMAGE/factory_168206.bin := append-kernel 3145728 | append-ubi | append-file ea8500_168206.tag
+	IMAGE/factory_169978.bin := append-kernel 3145728 | append-ubi | append-file ea8500_169978.tag
+	IMAGE/sysupgrade.tar := sysupgrade-nand
+	DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
+endef
+
+TARGET_DEVICES += AP148 AP148-legacy D7800 DB149 R7500 EA8500
 
 $(eval $(call BuildImage))
