@@ -9,8 +9,10 @@ failsafe_netlogin () {
 
 failsafe_shell() {
 	lock /tmp/.failsafe
+	[ -e /dev/console ] && exec </dev/console >/dev/console
 	ash --login
 	echo "Please reboot system when done with failsafe network logins"
+	while true; do sleep 1; done
 }
 
 boot_hook_add failsafe failsafe_netlogin
