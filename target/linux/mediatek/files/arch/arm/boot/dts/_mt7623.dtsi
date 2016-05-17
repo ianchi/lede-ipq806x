@@ -359,6 +359,7 @@
 	nandc: nfi@1100d000 {
 		compatible = "mediatek,mt2701-nfc";
 		reg = <0 0x1100d000 0 0x1000>;
+		power-domains = <&scpsys MT2701_POWER_DOMAIN_IFR_MSC>;
 		interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_LOW>;
 		clocks = <&pericfg CLK_PERI_NFI>,
 			 <&pericfg CLK_PERI_NFI_PAD>;
