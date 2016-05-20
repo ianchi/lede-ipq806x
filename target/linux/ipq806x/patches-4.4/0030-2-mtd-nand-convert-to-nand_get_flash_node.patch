@@ -1,0 +1,97 @@
+From 44ec23c9ecd95d13ec9dd8d0b0dc9e82bd3258ff Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Mon, 2 Nov 2015 00:03:38 +0100
+Subject: [PATCH] mtd: nand: convert to nand_get_flash_node()
+
+Used semantic patch with 'make coccicheck MODE=patch COCCI=script.cocci':
+
+---8<----
+virtual patch
+
+@@
+struct nand_chip c;
+struct nand_chip *cp;
+@@
+(
+-(cp)->flash_node
++nand_get_flash_node(cp)
+|
+-(c).flash_node
++nand_get_flash_node(&c)
+)
+---8<----
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/brcmnand/brcmnand.c | 2 +-
+ drivers/mtd/nand/nand_base.c         | 6 +++---
+ drivers/mtd/nand/vf610_nfc.c         | 6 +++---
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/mtd/nand/brcmnand/brcmnand.c b/drivers/mtd/nand/brcmnand/brcmnand.c
+index a37659d..2a437c7 100644
+--- a/drivers/mtd/nand/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/brcmnand/brcmnand.c
+@@ -1816,7 +1816,7 @@ static int brcmnand_setup_dev(struct brcmnand_host *host)
+ 
+ 	memset(cfg, 0, sizeof(*cfg));
+ 
+-	ret = of_property_read_u32(chip->flash_node,
++	ret = of_property_read_u32(nand_get_flash_node(chip),
+ 				   "brcm,nand-oob-sector-size",
+ 				   &oob_sector);
+ 	if (ret) {
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index 939ab3d5..4ac4efe 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -3989,11 +3989,11 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
+ 	struct nand_flash_dev *type;
+ 	int ret;
+ 
+-	if (chip->flash_node) {
++	if (nand_get_flash_node(chip)) {
+ 		/* MTD can automatically handle DT partitions, etc. */
+-		mtd_set_of_node(mtd, chip->flash_node);
++		mtd_set_of_node(mtd, nand_get_flash_node(chip));
+ 
+-		ret = nand_dt_init(mtd, chip, chip->flash_node);
++		ret = nand_dt_init(mtd, chip, nand_get_flash_node(chip));
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/drivers/mtd/nand/vf610_nfc.c b/drivers/mtd/nand/vf610_nfc.c
+index b6df4c6..1c86c6b 100644
+--- a/drivers/mtd/nand/vf610_nfc.c
++++ b/drivers/mtd/nand/vf610_nfc.c
+@@ -707,7 +707,7 @@ static int vf610_nfc_probe(struct platform_device *pdev)
+ 	for_each_available_child_of_node(nfc->dev->of_node, child) {
+ 		if (of_device_is_compatible(child, "fsl,vf610-nfc-nandcs")) {
+ 
+-			if (chip->flash_node) {
++			if (nand_get_flash_node(chip)) {
+ 				dev_err(nfc->dev,
+ 					"Only one NAND chip supported!\n");
+ 				err = -EINVAL;
+@@ -718,7 +718,7 @@ static int vf610_nfc_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	if (!chip->flash_node) {
++	if (!nand_get_flash_node(chip)) {
+ 		dev_err(nfc->dev, "NAND chip sub-node missing!\n");
+ 		err = -ENODEV;
+ 		goto err_clk;
+@@ -814,7 +814,7 @@ static int vf610_nfc_probe(struct platform_device *pdev)
+ 	return mtd_device_register(mtd, NULL, 0);
+ 
+ error:
+-	of_node_put(chip->flash_node);
++	of_node_put(nand_get_flash_node(chip));
+ err_clk:
+ 	clk_disable_unprepare(nfc->clk);
+ 	return err;
+-- 
+1.9.1
+

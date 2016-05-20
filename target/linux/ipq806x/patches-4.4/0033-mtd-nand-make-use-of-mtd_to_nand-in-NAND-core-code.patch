@@ -1,0 +1,680 @@
+From 862eba519e79c48fb6ee276081ddb98fe6926f02 Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Tue, 1 Dec 2015 12:03:03 +0100
+Subject: [PATCH] mtd: nand: make use of mtd_to_nand() in NAND core code
+
+mtd_to_nand() was recently introduced to avoid direct access to the
+mtd->priv field. Update core code to use mtd_to_nand().
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/nand_base.c | 84 ++++++++++++++++++++++----------------------
+ drivers/mtd/nand/nand_bbt.c  | 32 ++++++++---------
+ drivers/mtd/nand/nand_bch.c  |  4 +--
+ drivers/mtd/nand/nand_ecc.c  |  4 +--
+ drivers/mtd/nand/nandsim.c   | 18 +++++-----
+ 5 files changed, 71 insertions(+), 71 deletions(-)
+
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index 0748a13..5aec154 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -106,7 +106,7 @@ DEFINE_LED_TRIGGER(nand_led_trigger);
+ static int check_offs_len(struct mtd_info *mtd,
+ 					loff_t ofs, uint64_t len)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	int ret = 0;
+ 
+ 	/* Start address must align on block boundary */
+@@ -132,7 +132,7 @@ static int check_offs_len(struct mtd_info *mtd,
+  */
+ static void nand_release_device(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	/* Release the controller and the chip */
+ 	spin_lock(&chip->controller->lock);
+@@ -150,7 +150,7 @@ static void nand_release_device(struct mtd_info *mtd)
+  */
+ static uint8_t nand_read_byte(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	return readb(chip->IO_ADDR_R);
+ }
+ 
+@@ -163,7 +163,7 @@ static uint8_t nand_read_byte(struct mtd_info *mtd)
+  */
+ static uint8_t nand_read_byte16(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	return (uint8_t) cpu_to_le16(readw(chip->IO_ADDR_R));
+ }
+ 
+@@ -175,7 +175,7 @@ static uint8_t nand_read_byte16(struct mtd_info *mtd)
+  */
+ static u16 nand_read_word(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	return readw(chip->IO_ADDR_R);
+ }
+ 
+@@ -188,7 +188,7 @@ static u16 nand_read_word(struct mtd_info *mtd)
+  */
+ static void nand_select_chip(struct mtd_info *mtd, int chipnr)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	switch (chipnr) {
+ 	case -1:
+@@ -211,7 +211,7 @@ static void nand_select_chip(struct mtd_info *mtd, int chipnr)
+  */
+ static void nand_write_byte(struct mtd_info *mtd, uint8_t byte)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	chip->write_buf(mtd, &byte, 1);
+ }
+@@ -225,7 +225,7 @@ static void nand_write_byte(struct mtd_info *mtd, uint8_t byte)
+  */
+ static void nand_write_byte16(struct mtd_info *mtd, uint8_t byte)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	uint16_t word = byte;
+ 
+ 	/*
+@@ -257,7 +257,7 @@ static void nand_write_byte16(struct mtd_info *mtd, uint8_t byte)
+  */
+ static void nand_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	iowrite8_rep(chip->IO_ADDR_W, buf, len);
+ }
+@@ -272,7 +272,7 @@ static void nand_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
+  */
+ static void nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	ioread8_rep(chip->IO_ADDR_R, buf, len);
+ }
+@@ -287,7 +287,7 @@ static void nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
+  */
+ static void nand_write_buf16(struct mtd_info *mtd, const uint8_t *buf, int len)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	u16 *p = (u16 *) buf;
+ 
+ 	iowrite16_rep(chip->IO_ADDR_W, p, len >> 1);
+@@ -303,7 +303,7 @@ static void nand_write_buf16(struct mtd_info *mtd, const uint8_t *buf, int len)
+  */
+ static void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	u16 *p = (u16 *) buf;
+ 
+ 	ioread16_rep(chip->IO_ADDR_R, p, len >> 1);
+@@ -320,7 +320,7 @@ static void nand_read_buf16(struct mtd_info *mtd, uint8_t *buf, int len)
+ static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
+ {
+ 	int page, chipnr, res = 0, i = 0;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	u16 bad;
+ 
+ 	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
+@@ -380,7 +380,7 @@ static int nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
+  */
+ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct mtd_oob_ops ops;
+ 	uint8_t buf[2] = { 0, 0 };
+ 	int ret = 0, res, i = 0;
+@@ -430,7 +430,7 @@ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
+ */
+ static int nand_block_markbad_lowlevel(struct mtd_info *mtd, loff_t ofs)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	int res, ret = 0;
+ 
+ 	if (!(chip->bbt_options & NAND_BBT_NO_OOB_BBM)) {
+@@ -471,7 +471,7 @@ static int nand_block_markbad_lowlevel(struct mtd_info *mtd, loff_t ofs)
+  */
+ static int nand_check_wp(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	/* Broken xD cards report WP despite being writable */
+ 	if (chip->options & NAND_BROKEN_XD)
+@@ -491,7 +491,7 @@ static int nand_check_wp(struct mtd_info *mtd)
+  */
+ static int nand_block_isreserved(struct mtd_info *mtd, loff_t ofs)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	if (!chip->bbt)
+ 		return 0;
+@@ -512,7 +512,7 @@ static int nand_block_isreserved(struct mtd_info *mtd, loff_t ofs)
+ static int nand_block_checkbad(struct mtd_info *mtd, loff_t ofs, int getchip,
+ 			       int allowbbt)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	if (!chip->bbt)
+ 		return chip->block_bad(mtd, ofs, getchip);
+@@ -531,7 +531,7 @@ static int nand_block_checkbad(struct mtd_info *mtd, loff_t ofs, int getchip,
+  */
+ static void panic_nand_wait_ready(struct mtd_info *mtd, unsigned long timeo)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	int i;
+ 
+ 	/* Wait for the device to get ready */
+@@ -551,7 +551,7 @@ static void panic_nand_wait_ready(struct mtd_info *mtd, unsigned long timeo)
+  */
+ void nand_wait_ready(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	unsigned long timeo = 400;
+ 
+ 	if (in_interrupt() || oops_in_progress)
+@@ -582,7 +582,7 @@ EXPORT_SYMBOL_GPL(nand_wait_ready);
+  */
+ static void nand_wait_status_ready(struct mtd_info *mtd, unsigned long timeo)
+ {
+-	register struct nand_chip *chip = mtd->priv;
++	register struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	timeo = jiffies + msecs_to_jiffies(timeo);
+ 	do {
+@@ -605,7 +605,7 @@ static void nand_wait_status_ready(struct mtd_info *mtd, unsigned long timeo)
+ static void nand_command(struct mtd_info *mtd, unsigned int command,
+ 			 int column, int page_addr)
+ {
+-	register struct nand_chip *chip = mtd->priv;
++	register struct nand_chip *chip = mtd_to_nand(mtd);
+ 	int ctrl = NAND_CTRL_CLE | NAND_CTRL_CHANGE;
+ 
+ 	/* Write out the command to the device */
+@@ -708,7 +708,7 @@ static void nand_command(struct mtd_info *mtd, unsigned int command,
+ static void nand_command_lp(struct mtd_info *mtd, unsigned int command,
+ 			    int column, int page_addr)
+ {
+-	register struct nand_chip *chip = mtd->priv;
++	register struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	/* Emulate NAND_CMD_READOOB */
+ 	if (command == NAND_CMD_READOOB) {
+@@ -832,7 +832,7 @@ static void panic_nand_get_device(struct nand_chip *chip,
+ static int
+ nand_get_device(struct mtd_info *mtd, int new_state)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	spinlock_t *lock = &chip->controller->lock;
+ 	wait_queue_head_t *wq = &chip->controller->wq;
+ 	DECLARE_WAITQUEUE(wait, current);
+@@ -952,7 +952,7 @@ static int __nand_unlock(struct mtd_info *mtd, loff_t ofs,
+ {
+ 	int ret = 0;
+ 	int status, page;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	/* Submit address of first page to unlock */
+ 	page = ofs >> chip->page_shift;
+@@ -987,7 +987,7 @@ int nand_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+ {
+ 	int ret = 0;
+ 	int chipnr;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	pr_debug("%s: start = 0x%012llx, len = %llu\n",
+ 			__func__, (unsigned long long)ofs, len);
+@@ -1050,7 +1050,7 @@ int nand_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+ {
+ 	int ret = 0;
+ 	int chipnr, status, page;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	pr_debug("%s: start = 0x%012llx, len = %llu\n",
+ 			__func__, (unsigned long long)ofs, len);
+@@ -1655,7 +1655,7 @@ static uint8_t *nand_transfer_oob(struct nand_chip *chip, uint8_t *oob,
+  */
+ static int nand_setup_read_retry(struct mtd_info *mtd, int retry_mode)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	pr_debug("setting READ RETRY mode %d\n", retry_mode);
+ 
+@@ -1680,7 +1680,7 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+ 			    struct mtd_oob_ops *ops)
+ {
+ 	int chipnr, page, realpage, col, bytes, aligned, oob_required;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	int ret = 0;
+ 	uint32_t readlen = ops->len;
+ 	uint32_t oobreadlen = ops->ooblen;
+@@ -2024,7 +2024,7 @@ static int nand_do_read_oob(struct mtd_info *mtd, loff_t from,
+ 			    struct mtd_oob_ops *ops)
+ {
+ 	int page, realpage, chipnr;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct mtd_ecc_stats stats;
+ 	int readlen = ops->ooblen;
+ 	int len;
+@@ -2472,7 +2472,7 @@ static int nand_write_page(struct mtd_info *mtd, struct nand_chip *chip,
+ static uint8_t *nand_fill_oob(struct mtd_info *mtd, uint8_t *oob, size_t len,
+ 			      struct mtd_oob_ops *ops)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	/*
+ 	 * Initialise to all 0xFF, to avoid the possibility of left over OOB
+@@ -2532,7 +2532,7 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
+ 			     struct mtd_oob_ops *ops)
+ {
+ 	int chipnr, realpage, page, blockmask, column;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	uint32_t writelen = ops->len;
+ 
+ 	uint32_t oobwritelen = ops->ooblen;
+@@ -2662,7 +2662,7 @@ err_out:
+ static int panic_nand_write(struct mtd_info *mtd, loff_t to, size_t len,
+ 			    size_t *retlen, const uint8_t *buf)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct mtd_oob_ops ops;
+ 	int ret;
+ 
+@@ -2722,7 +2722,7 @@ static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
+ 			     struct mtd_oob_ops *ops)
+ {
+ 	int chipnr, page, status, len;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	pr_debug("%s: to = 0x%08x, len = %i\n",
+ 			 __func__, (unsigned int)to, (int)ops->ooblen);
+@@ -2847,7 +2847,7 @@ out:
+  */
+ static int single_erase(struct mtd_info *mtd, int page)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	/* Send commands to erase a block */
+ 	chip->cmdfunc(mtd, NAND_CMD_ERASE1, -1, page);
+ 	chip->cmdfunc(mtd, NAND_CMD_ERASE2, -1, -1);
+@@ -2879,7 +2879,7 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
+ 		    int allowbbt)
+ {
+ 	int page, status, pages_per_block, ret, chipnr;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	loff_t len;
+ 
+ 	pr_debug("%s: start = 0x%012llx, len = %llu\n",
+@@ -3094,7 +3094,7 @@ static int nand_suspend(struct mtd_info *mtd)
+  */
+ static void nand_resume(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	if (chip->state == FL_PM_SUSPENDED)
+ 		nand_release_device(mtd);
+@@ -3266,7 +3266,7 @@ ext_out:
+ 
+ static int nand_setup_read_retry_micron(struct mtd_info *mtd, int retry_mode)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	uint8_t feature[ONFI_SUBFEATURE_PARAM_LEN] = {retry_mode};
+ 
+ 	return chip->onfi_set_features(mtd, chip, ONFI_FEATURE_ADDR_READ_RETRY,
+@@ -3985,7 +3985,7 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
+ 		    struct nand_flash_dev *table)
+ {
+ 	int i, nand_maf_id, nand_dev_id;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct nand_flash_dev *type;
+ 	int ret;
+ 
+@@ -4056,7 +4056,7 @@ EXPORT_SYMBOL(nand_scan_ident);
+  */
+ static bool nand_ecc_strength_good(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct nand_ecc_ctrl *ecc = &chip->ecc;
+ 	int corr, ds_corr;
+ 
+@@ -4085,7 +4085,7 @@ static bool nand_ecc_strength_good(struct mtd_info *mtd)
+ int nand_scan_tail(struct mtd_info *mtd)
+ {
+ 	int i;
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct nand_ecc_ctrl *ecc = &chip->ecc;
+ 	struct nand_buffers *nbuf;
+ 
+@@ -4429,7 +4429,7 @@ EXPORT_SYMBOL(nand_scan);
+  */
+ void nand_release(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	if (chip->ecc.mode == NAND_ECC_SOFT_BCH)
+ 		nand_bch_free((struct nand_bch_control *)chip->ecc.priv);
+diff --git a/drivers/mtd/nand/nand_bbt.c b/drivers/mtd/nand/nand_bbt.c
+index b1d4f81..4b6a708 100644
+--- a/drivers/mtd/nand/nand_bbt.c
++++ b/drivers/mtd/nand/nand_bbt.c
+@@ -172,7 +172,7 @@ static int read_bbt(struct mtd_info *mtd, uint8_t *buf, int page, int num,
+ 		struct nand_bbt_descr *td, int offs)
+ {
+ 	int res, ret = 0, i, j, act = 0;
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	size_t retlen, len, totlen;
+ 	loff_t from;
+ 	int bits = td->options & NAND_BBT_NRBITS_MSK;
+@@ -263,7 +263,7 @@ static int read_bbt(struct mtd_info *mtd, uint8_t *buf, int page, int num,
+  */
+ static int read_abs_bbt(struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_descr *td, int chip)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int res = 0, i;
+ 
+ 	if (td->options & NAND_BBT_PERCHIP) {
+@@ -388,7 +388,7 @@ static u32 bbt_get_ver_offs(struct mtd_info *mtd, struct nand_bbt_descr *td)
+ static void read_abs_bbts(struct mtd_info *mtd, uint8_t *buf,
+ 			  struct nand_bbt_descr *td, struct nand_bbt_descr *md)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 
+ 	/* Read the primary version, if available */
+ 	if (td->options & NAND_BBT_VERSION) {
+@@ -454,7 +454,7 @@ static int scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr *bd,
+ static int create_bbt(struct mtd_info *mtd, uint8_t *buf,
+ 	struct nand_bbt_descr *bd, int chip)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int i, numblocks, numpages;
+ 	int startblock;
+ 	loff_t from;
+@@ -523,7 +523,7 @@ static int create_bbt(struct mtd_info *mtd, uint8_t *buf,
+  */
+ static int search_bbt(struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_descr *td)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int i, chips;
+ 	int startblock, block, dir;
+ 	int scanlen = mtd->writesize + mtd->oobsize;
+@@ -618,7 +618,7 @@ static int write_bbt(struct mtd_info *mtd, uint8_t *buf,
+ 		     struct nand_bbt_descr *td, struct nand_bbt_descr *md,
+ 		     int chipsel)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	struct erase_info einfo;
+ 	int i, res, chip = 0;
+ 	int bits, startblock, dir, page, offs, numblocks, sft, sftmsk;
+@@ -819,7 +819,7 @@ static int write_bbt(struct mtd_info *mtd, uint8_t *buf,
+  */
+ static inline int nand_memory_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 
+ 	return create_bbt(mtd, this->buffers->databuf, bd, -1);
+ }
+@@ -838,7 +838,7 @@ static inline int nand_memory_bbt(struct mtd_info *mtd, struct nand_bbt_descr *b
+ static int check_create(struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_descr *bd)
+ {
+ 	int i, chips, writeops, create, chipsel, res, res2;
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	struct nand_bbt_descr *td = this->bbt_td;
+ 	struct nand_bbt_descr *md = this->bbt_md;
+ 	struct nand_bbt_descr *rd, *rd2;
+@@ -962,7 +962,7 @@ static int check_create(struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_desc
+  */
+ static void mark_bbt_region(struct mtd_info *mtd, struct nand_bbt_descr *td)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int i, j, chips, block, nrblocks, update;
+ 	uint8_t oldval;
+ 
+@@ -1022,7 +1022,7 @@ static void mark_bbt_region(struct mtd_info *mtd, struct nand_bbt_descr *td)
+  */
+ static void verify_bbt_descr(struct mtd_info *mtd, struct nand_bbt_descr *bd)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	u32 pattern_len;
+ 	u32 bits;
+ 	u32 table_size;
+@@ -1074,7 +1074,7 @@ static void verify_bbt_descr(struct mtd_info *mtd, struct nand_bbt_descr *bd)
+  */
+ static int nand_scan_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int len, res;
+ 	uint8_t *buf;
+ 	struct nand_bbt_descr *td = this->bbt_td;
+@@ -1147,7 +1147,7 @@ err:
+  */
+ static int nand_update_bbt(struct mtd_info *mtd, loff_t offs)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int len, res = 0;
+ 	int chip, chipsel;
+ 	uint8_t *buf;
+@@ -1281,7 +1281,7 @@ static int nand_create_badblock_pattern(struct nand_chip *this)
+  */
+ int nand_default_bbt(struct mtd_info *mtd)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int ret;
+ 
+ 	/* Is a flash based bad block table requested? */
+@@ -1317,7 +1317,7 @@ int nand_default_bbt(struct mtd_info *mtd)
+  */
+ int nand_isreserved_bbt(struct mtd_info *mtd, loff_t offs)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int block;
+ 
+ 	block = (int)(offs >> this->bbt_erase_shift);
+@@ -1332,7 +1332,7 @@ int nand_isreserved_bbt(struct mtd_info *mtd, loff_t offs)
+  */
+ int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int block, res;
+ 
+ 	block = (int)(offs >> this->bbt_erase_shift);
+@@ -1359,7 +1359,7 @@ int nand_isbad_bbt(struct mtd_info *mtd, loff_t offs, int allowbbt)
+  */
+ int nand_markbad_bbt(struct mtd_info *mtd, loff_t offs)
+ {
+-	struct nand_chip *this = mtd->priv;
++	struct nand_chip *this = mtd_to_nand(mtd);
+ 	int block, ret = 0;
+ 
+ 	block = (int)(offs >> this->bbt_erase_shift);
+diff --git a/drivers/mtd/nand/nand_bch.c b/drivers/mtd/nand/nand_bch.c
+index 3803e0b..e5758d8 100644
+--- a/drivers/mtd/nand/nand_bch.c
++++ b/drivers/mtd/nand/nand_bch.c
+@@ -52,7 +52,7 @@ struct nand_bch_control {
+ int nand_bch_calculate_ecc(struct mtd_info *mtd, const unsigned char *buf,
+ 			   unsigned char *code)
+ {
+-	const struct nand_chip *chip = mtd->priv;
++	const struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct nand_bch_control *nbc = chip->ecc.priv;
+ 	unsigned int i;
+ 
+@@ -79,7 +79,7 @@ EXPORT_SYMBOL(nand_bch_calculate_ecc);
+ int nand_bch_correct_data(struct mtd_info *mtd, unsigned char *buf,
+ 			  unsigned char *read_ecc, unsigned char *calc_ecc)
+ {
+-	const struct nand_chip *chip = mtd->priv;
++	const struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct nand_bch_control *nbc = chip->ecc.priv;
+ 	unsigned int *errloc = nbc->errloc;
+ 	int i, count;
+diff --git a/drivers/mtd/nand/nand_ecc.c b/drivers/mtd/nand/nand_ecc.c
+index 97c4c02..e612985 100644
+--- a/drivers/mtd/nand/nand_ecc.c
++++ b/drivers/mtd/nand/nand_ecc.c
+@@ -424,7 +424,7 @@ int nand_calculate_ecc(struct mtd_info *mtd, const unsigned char *buf,
+ 		       unsigned char *code)
+ {
+ 	__nand_calculate_ecc(buf,
+-			((struct nand_chip *)mtd->priv)->ecc.size, code);
++			mtd_to_nand(mtd)->ecc.size, code);
+ 
+ 	return 0;
+ }
+@@ -524,7 +524,7 @@ int nand_correct_data(struct mtd_info *mtd, unsigned char *buf,
+ 		      unsigned char *read_ecc, unsigned char *calc_ecc)
+ {
+ 	return __nand_correct_data(buf, read_ecc, calc_ecc,
+-				   ((struct nand_chip *)mtd->priv)->ecc.size);
++				   mtd_to_nand(mtd)->ecc.size);
+ }
+ EXPORT_SYMBOL(nand_correct_data);
+ 
+diff --git a/drivers/mtd/nand/nandsim.c b/drivers/mtd/nand/nandsim.c
+index b16d70a..eb2a567 100644
+--- a/drivers/mtd/nand/nandsim.c
++++ b/drivers/mtd/nand/nandsim.c
+@@ -666,7 +666,7 @@ static char *get_partition_name(int i)
+  */
+ static int init_nandsim(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 	struct nandsim   *ns   = chip->priv;
+ 	int i, ret = 0;
+ 	uint64_t remains;
+@@ -1908,7 +1908,7 @@ static void switch_state(struct nandsim *ns)
+ 
+ static u_char ns_nand_read_byte(struct mtd_info *mtd)
+ {
+-	struct nandsim *ns = ((struct nand_chip *)mtd->priv)->priv;
++	struct nandsim *ns = mtd_to_nand(mtd)->priv;
+ 	u_char outb = 0x00;
+ 
+ 	/* Sanity and correctness checks */
+@@ -1969,7 +1969,7 @@ static u_char ns_nand_read_byte(struct mtd_info *mtd)
+ 
+ static void ns_nand_write_byte(struct mtd_info *mtd, u_char byte)
+ {
+-	struct nandsim *ns = ((struct nand_chip *)mtd->priv)->priv;
++	struct nandsim *ns = mtd_to_nand(mtd)->priv;
+ 
+ 	/* Sanity and correctness checks */
+ 	if (!ns->lines.ce) {
+@@ -2123,7 +2123,7 @@ static void ns_nand_write_byte(struct mtd_info *mtd, u_char byte)
+ 
+ static void ns_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int bitmask)
+ {
+-	struct nandsim *ns = ((struct nand_chip *)mtd->priv)->priv;
++	struct nandsim *ns = mtd_to_nand(mtd)->priv;
+ 
+ 	ns->lines.cle = bitmask & NAND_CLE ? 1 : 0;
+ 	ns->lines.ale = bitmask & NAND_ALE ? 1 : 0;
+@@ -2141,7 +2141,7 @@ static int ns_device_ready(struct mtd_info *mtd)
+ 
+ static uint16_t ns_nand_read_word(struct mtd_info *mtd)
+ {
+-	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
++	struct nand_chip *chip = mtd_to_nand(mtd);
+ 
+ 	NS_DBG("read_word\n");
+ 
+@@ -2150,7 +2150,7 @@ static uint16_t ns_nand_read_word(struct mtd_info *mtd)
+ 
+ static void ns_nand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
+ {
+-	struct nandsim *ns = ((struct nand_chip *)mtd->priv)->priv;
++	struct nandsim *ns = mtd_to_nand(mtd)->priv;
+ 
+ 	/* Check that chip is expecting data input */
+ 	if (!(ns->state & STATE_DATAIN_MASK)) {
+@@ -2177,7 +2177,7 @@ static void ns_nand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
+ 
+ static void ns_nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
+ {
+-	struct nandsim *ns = ((struct nand_chip *)mtd->priv)->priv;
++	struct nandsim *ns = mtd_to_nand(mtd)->priv;
+ 
+ 	/* Sanity and correctness checks */
+ 	if (!ns->lines.ce) {
+@@ -2198,7 +2198,7 @@ static void ns_nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
+ 		int i;
+ 
+ 		for (i = 0; i < len; i++)
+-			buf[i] = ((struct nand_chip *)mtd->priv)->read_byte(mtd);
++			buf[i] = mtd_to_nand(mtd)->read_byte(mtd);
+ 
+ 		return;
+ 	}
+@@ -2405,7 +2405,7 @@ module_init(ns_init_module);
+  */
+ static void __exit ns_cleanup_module(void)
+ {
+-	struct nandsim *ns = ((struct nand_chip *)nsmtd->priv)->priv;
++	struct nandsim *ns = mtd_to_nand(nsmtd)->priv;
+ 	int i;
+ 
+ 	nandsim_debugfs_remove(ns);
+-- 
+1.9.1
+

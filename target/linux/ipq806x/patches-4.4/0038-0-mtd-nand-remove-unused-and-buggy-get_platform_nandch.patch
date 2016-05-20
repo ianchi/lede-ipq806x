@@ -1,0 +1,62 @@
+From 8142b47ef33c655a34e08efd46b65732fe190675 Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Mon, 14 Dec 2015 16:13:31 +0100
+Subject: [PATCH] mtd: nand: remove unused and buggy get_platform_nandchip()
+ helper function
+
+Nobody uses the get_platform_nandchip() helper function which is supposed
+to return a pointer to a platform_nand_chip struct from an mtd_info
+pointer.
+Moreover, this function is buggy since the introduction of the plat_nand
+layer (chip->priv is now storing a pointer to an intermediate
+plat_nand_data structure allocated in plat_nand_probe(), and we have no
+way to retrieve a pointer to the provided platform_nand_chip struct from
+this plat_nand_data pointer).
+
+While we are at it, remove the useless (and buggy, since it's pointing to
+something stored on the stack) data->chip.priv assignment.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Fixes: 711fdf627ce1 ("[MTD] [NAND] platform NAND driver: add driver")
+Cc: Vitaly Wool <vitalywool@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/nand/plat_nand.c | 1 -
+ include/linux/mtd/nand.h     | 9 ---------
+ 2 files changed, 10 deletions(-)
+
+diff --git a/drivers/mtd/nand/plat_nand.c b/drivers/mtd/nand/plat_nand.c
+index dc88a58..a0e26de 100644
+--- a/drivers/mtd/nand/plat_nand.c
++++ b/drivers/mtd/nand/plat_nand.c
+@@ -56,7 +56,6 @@ static int plat_nand_probe(struct platform_device *pdev)
+ 	if (IS_ERR(data->io_base))
+ 		return PTR_ERR(data->io_base);
+ 
+-	data->chip.priv = &data;
+ 	nand_set_flash_node(&data->chip, pdev->dev.of_node);
+ 	mtd = nand_to_mtd(&data->chip);
+ 	mtd->dev.parent = &pdev->dev;
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 2bee2e4..3e92be1 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -927,15 +927,6 @@ struct platform_nand_data {
+ 	struct platform_nand_ctrl ctrl;
+ };
+ 
+-/* Some helpers to access the data structures */
+-static inline
+-struct platform_nand_chip *get_platform_nandchip(struct mtd_info *mtd)
+-{
+-	struct nand_chip *chip = mtd->priv;
+-
+-	return chip->priv;
+-}
+-
+ /* return the supported features. */
+ static inline int onfi_feature(struct nand_chip *chip)
+ {
+-- 
+1.9.1
+
