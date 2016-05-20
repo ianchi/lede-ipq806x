@@ -726,7 +726,7 @@
 		};
 
 		nand@1ac00000 {
-			compatible = "qcom,ebi2-nandc";
+			compatible = "qcom,ipq806x-nand";
 			reg = <0x1ac00000 0x800>;
 
 			clocks = <&gcc EBI2_CLK>,
